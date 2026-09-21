@@ -30,7 +30,7 @@ Licence: MIT
 
 List of indices:
 
-dict[tas]="K|Near surface temperature"
+dict[tas]="K|Near surface temperature"\
 dict[tasmin]="K|Daily minimum reference height temperature"
 dict[tasmax]="K|Daily maximum reference height temperature"
 dict[pr]="kg m**-2 s-1|Total precipitation rate"     # downscaling_ML: mm/day,   ERA5: m
