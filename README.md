@@ -1,17 +1,17 @@
 # ClimTip_climate_indices
 Code for computation of climate indices from netcdf climate model output.
 
-The script is executed to compute indices for climate model simulation output. See the dictionary of indices below, as used in the actual code (ksh shell script).
-The shell script relies on climate data operators (cdo's) and is taylored to the output generated in the ClimTip project. https://www.climate-tipping-points.eu/
+The script is executed to compute indices for climate model simulation output. See the dictionary of indices below, as used in the actual code (ksh shell script). \
+The shell script relies on climate data operators (cdo's) and is taylored to the output generated in the ClimTip project. https://www.climate-tipping-points.eu/ \
 Also see the documentation of the Earth system model output on zenodo, DOI: 10.5281/zenodo.16784934.
 
 The ClimTip simulations contribute to the TIPMIP model intercomparison; see:
-Jones et al., 2026: https://gmd.copernicus.org/articles/19/6941/2026/
-Winkelmann et al., https://egusphere.copernicus.org/preprints/2025/egusphere-2025-1899/
+Jones et al., 2026: https://gmd.copernicus.org/articles/19/6941/2026/ \
+Winkelmann et al., https://egusphere.copernicus.org/preprints/2025/egusphere-2025-1899/ \
 Swingedouw et al., https://egusphere.copernicus.org/preprints/2026/egusphere-2026-1698/
 
-The ClimTip specific setup, the simulations, and the methods are explained in these papers (and some papers cited therein):
-Wood et al. (CO2 forcing construction; called "P-method" in this paper): https://zenodo.org/records/20560921
+The ClimTip specific setup, the simulations, and the methods are explained in these papers (and some papers cited therein): \
+Wood et al. (CO2 forcing construction; called "P-method" in this paper): https://zenodo.org/records/20560921 \
 Hess et al. (bias correction and machine learning-based downscaling): https://doi.org/10.48550/arXiv.2609.23149
 
 For technical information on the code, see compute_climate_indices.ksh
