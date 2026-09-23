@@ -21,7 +21,7 @@ with support from Nikhil Kumar, Uppsala University.
 
 Licence: MIT
 
-DOI of version 1: DOI: 10.5281/zenodo.22913257 
+DOI of version 1.0: DOI: 10.5281/zenodo.22913257 
 
 List of indices:
 
