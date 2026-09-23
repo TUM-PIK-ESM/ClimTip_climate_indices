@@ -12,7 +12,7 @@ Swingedouw et al., https://egusphere.copernicus.org/preprints/2026/egusphere-202
 
 The ClimTip specific setup, the simulations, and the methods are explained in these papers (and some papers cited therein):
 Wood et al. (CO2 forcing construction; called "P-method" in this paper): https://zenodo.org/records/20560921
-Hess et al. (bias correction and machine learning-based downscaling): https://arxiv.org/abs/2609.23149
+Hess et al. (bias correction and machine learning-based downscaling): https://doi.org/10.48550/arXiv.2609.23149
 
 For technical information on the code, see compute_climate_indices.ksh
 
