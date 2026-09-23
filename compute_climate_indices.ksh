@@ -1,11 +1,7 @@
 #!/bin/ksh
 
 ### This script is executed to compute indices for climate model simulation output.
-### It is taylored to the output generated in the ClimTip project. https://www.climate-tipping-points.eu/
-### The setup, the simulations, and the methods are explained in these papers (and some papers cited therein):
-# Wood et al.:
-# Hess et al: 
-## Also see the documentation of the Earth system model output on zenodo, DOI: 10.5281/zenodo.16784934.
+### See README.md for more information.
 
 ## maskfiles (e.g. for masking days fulfilling a criterion) are generated but deleted again automatically.
 ## This shell scipt checks if output files of the climate indices to be computed already exist. In this case, indices are skipped.
@@ -15,7 +11,7 @@
 ## These indices need a reference simulation to compute percentiles relative to the reference: R95pTOT R99pTOT WSDI TX90p CSDI TN10p TX10p TN90p
 ## We here take 1940-2000 of the historical run. 
 ## Advantage: A sufficiently long period, but with not too much forced trend
-## Disadvantage: No historical run was done in WRF, hence these indices have not been generated for downscaling_WRF.
+## Disadvantage: No historical run was done in WRF, hence these indices have not been generated for downscaling_WRF (dynamical downscaling).
 
 ## Some indices are summary statistics without time resolution. The time aggregation label in these cases is "fx". 
 ## In case of the historical run (a transient simulation), we use 1979-2000 (same time period as used to compare models to ERA5).
@@ -23,7 +19,7 @@
 
 
 ## Written for the ClimTip project by Sebastian Bathiany, Technical University of Munich,
-## with support by Nikhil Kumar, Uppsala University.
+## with support from Nikhil Kumar, Uppsala University.
 
 ## Licence: MIT
 
@@ -506,7 +502,7 @@ for datatype in ${datatypes}; do
 
                       cdo eca_gsl ${tas} ${lsm} ${indexfile}_full
 
-                      ## remove first and last year because output is meaningless (cannot detect in year 1 when growing season has started, ...)
+                      ## remove first and last year because output is meaningless (cannot detect in year 1 when growing season has started)
                       years=$(cdo -s showyear "${indexfile}_full")
                       set -- $years
                       first_year=$1
@@ -521,7 +517,7 @@ for datatype in ${datatypes}; do
                       cdo setmissval,nan ${indexfile}_all_masked ${indexfile}_all
 
                       ### sometimes, the dimensions have changed, perhaps because of different dimension names in the different files (and the lsm file). Repair this here:
-                      if [[ ${datatype} == "downscaling_MLv2" ]]; then   # not sure we need the if clause actually...
+                      if [[ ${datatype} == "downscaling_MLv2" ]]; then   # not sure we need the if clause actually
                         ncrename -d .x,longitude -d .y,latitude ${indexfile}_all_masked 2>/dev/null || true
                         ncrename -v .lon,longitude -v .lat,latitude ${indexfile}_all_masked 2>/dev/null || true                 
                         mv ${indexfile}_all_masked ${indexfile}_all
