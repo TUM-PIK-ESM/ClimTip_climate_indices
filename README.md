@@ -5,7 +5,7 @@ The script is executed to compute indices for climate model simulation output. S
 The shell script relies on climate data operators (cdo's) and is taylored to the output generated in the ClimTip project. https://www.climate-tipping-points.eu/ \
 Also see the documentation of the Earth system model output on zenodo, DOI: 10.5281/zenodo.16784934.
 
-The ClimTip simulations contribute to the TIPMIP model intercomparison; see:
+The ClimTip simulations contribute to the TIPMIP model intercomparison; see: \
 Jones et al., 2026: https://gmd.copernicus.org/articles/19/6941/2026/ \
 Winkelmann et al., https://egusphere.copernicus.org/preprints/2025/egusphere-2025-1899/ \
 Swingedouw et al., https://egusphere.copernicus.org/preprints/2026/egusphere-2026-1698/
@@ -16,8 +16,7 @@ Hess et al. (bias correction and machine learning-based downscaling): https://do
 
 For technical information on the code, see compute_climate_indices.ksh
 
-The code was written for the ClimTip project by Sebastian Bathiany, Technical University of Munich,
-with support from Nikhil Kumar, Uppsala University.
+The code was written for the ClimTip project by Sebastian Bathiany, Technical University of Munich, with support from Nikhil Kumar, Uppsala University.
 
 Licence: MIT
 
