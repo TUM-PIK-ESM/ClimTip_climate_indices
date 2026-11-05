@@ -6,16 +6,24 @@
 ## maskfiles (e.g. for masking days fulfilling a criterion) are generated but deleted again automatically.
 ## This shell scipt checks if output files of the climate indices to be computed already exist. In this case, indices are skipped.
 
-## This index requires a land-sea mask file: GSL
+## table_id in file names:
+## All indices get the letter E (extended) as the prefix in the table_id. It signals to users that these are non-standard extension variables.
+## Regarding the frequency given in the file name:
+## When the index has a time series (e.g. TXx computed annually, giving one value per year), the frequency reflects the output frequency of the index itself.
+## When the index is a single value over the whole period (e.g. TN10p or tasstd computed as a climatology), the frequency reflects the input data frequency used to compute it — because there is no meaningful output frequency.
+## We do not use the table_id "fx" because that would require removing the time period information from the file name.
 
-## These indices need a reference simulation to compute percentiles relative to the reference: R95pTOT R99pTOT WSDI TX90p CSDI TN10p TX10p TN90p
+## For indices with a single value over the whole period:
+## In case of the historical run (a transient simulation), we use 1979-2000 (same time period as used to compare models to ERA5).
+## For other scenarios, the whole time period is used.
+
+
+## The following index requires a land-sea mask file: GSL
+
+## The following indices need a reference simulation to compute percentiles relative to the reference: R95pTOT R99pTOT WSDI TX90p CSDI TN10p TX10p TN90p
 ## We here take 1940-2000 of the historical run. 
 ## Advantage: A sufficiently long period, but with not too much forced trend
 ## Disadvantage: No historical run was done in WRF, hence these indices have not been generated for downscaling_WRF (dynamical downscaling).
-
-## Some indices are summary statistics without time resolution. The time aggregation label in these cases is "fx". 
-## In case of the historical run (a transient simulation), we use 1979-2000 (same time period as used to compare models to ERA5).
-## For other scenarios, the whole time period is used.
 
 
 ## Written for the ClimTip project by Sebastian Bathiany, Technical University of Munich,
@@ -27,14 +35,18 @@
 ######### edit here:
 indices='Rx1day Rx5day R95pTOT R99pTOT DD R10mm R20mm CDD CWD TXx TNx TXn TNn HD SU TR FD ID TX10p TN10p TX90p TN90p DTR WSDI CSDI GSL tasstd prstd HDD CoDD'
 
+datatypes="ESM_output"
+
 models='MPI-ESM1-2-HR HadGEM3-GC31-MM CESM1-CAM5'
 #models='MPI-ESM1-2-HR CESM1-CAM5' # WRF
 #models='MPI-ESM1-2-HR'
 #models='HadGEM3-GC31-MM'
 #models='CESM1-CAM5'
 
-scenarios='historical piControl stableT_2K stableT_2K_AMOC stableT_2K_ARF' #ESM, ML
+scenarios='historical piControl stableT_2K stableT_2K_AMOC stableT_2K_ARF' #ESM & ML
 #scenarios='piControl stableT_2K stableT_2K_AMOC stableT_2K_ARF' # WRF
+
+#scenarios='stableT_2K'
 
 
 #################################
@@ -141,6 +153,7 @@ for datatype in ${datatypes}; do
         fi
         prscale=1 # already in mm/day
       else
+        echo "datatype not found"
         exit
       fi
 
@@ -183,26 +196,31 @@ for datatype in ${datatypes}; do
         for rea in ${realisations}; do
           for grid in ${gridlist}; do
 
-            pr="pr_day_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
-            tas="tas_day_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
-            tasmin="tasmin_day_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
-            tasmax="tasmax_day_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+            pr="pr_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+            tas="tas_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+            tasmin="tasmin_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+            tasmax="tasmax_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
 
             for index in ${indices}; do
               echo ""
               echo "${datatype}, ${model}, ${scen}, ${rea}, ${grid}, ${index}"
 
-              #var_orig_file="${var_orig}_day_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+              #var_orig_file="${var_orig}_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
 
-              ### some indices have several aggregation periods, some don't:
-              aggregation_periods="year"
+              ### some indices have been computed for several aggregation periods:
+              frequencies="yr"
               time_span_indexfile=${time_span}
               case "$index" in
                 Rx1day|Rx5day|TXx|TNx|TXn|TNn)
-                  aggregation_periods="year mon"
+                  frequencies="yr mon"
                   ;;
-                TX10p|TN10p|TX90p|TN90p|tasstd|prstd)
-                  aggregation_periods="fx"
+                TX10p|TN10p|TX90p|TN90p|tasstd|prstd) ## these indices are no time series, but single values computed from the entire time period
+                  if [[ ${index} == "tasstd" ||  ${index} == "prstd" ]]; then
+                    frequencies="yr"   # since they are derived from yearly averages
+                  else
+                    frequencies="day"  # since they are derived from the daily output
+                  fi
+
                   if [[ ${scen} == "historical" ]]; then
                     if [[ ${model} == 'HadGEM3-GC31-MM' ]]; then
                       time_span_indexfile="19790101-20001230"
@@ -215,9 +233,19 @@ for datatype in ${datatypes}; do
                 ;;
               esac
 
-              for aggregation_period in ${aggregation_periods}; do
+              for freq in ${frequencies}; do
 
-                indexfile="${index}_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                if [[ ${freq} == "yr" ]]; then
+                  cdo_aggregation="year"
+                elif [[ ${freq} == "mon" ]]; then
+                  cdo_aggregation="mon"
+                #else
+                # indices like tasstd prstd TX10p etc do not use ${cdo_aggregation}, so omit"
+                # T??0p indices have frequency day (see above), but that's not used in a command since it is the original data's frequency.
+
+                fi
+
+                indexfile="${index}_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
                 if [[ ! -f ${indexfile} ]]; then
 
                   ### 1. compute mask for indices that need it, and keep it until loop over aggregation time is closed.
@@ -234,13 +262,13 @@ for datatype in ${datatypes}; do
                       R95pTOT)
                         ## note: cdo documentation of eca_r95ptot is so confusing (and seems to differ from common definitions) that we don't use it here!
                         ## https://code.mpimet.mpg.de/boards/1/topics/6182
-                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_day_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
+                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_Aday_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
                         cdo timpctl,95 reference_climate_${index}.nc -timmin reference_climate_${index}.nc -timmax reference_climate_${index}.nc ${maskfile}
                         rm reference_climate_${index}.nc
                         percentiles=1
                         ;;
                       R99pTOT)
-                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_day_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
+                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_Aday_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
                         cdo timpctl,99 reference_climate_${index}.nc -timmin reference_climate_${index}.nc -timmax reference_climate_${index}.nc ${maskfile}
                         rm reference_climate_${index}.nc
                         percentiles=1
@@ -289,8 +317,7 @@ for datatype in ${datatypes}; do
                         esac
 
                         ### problem: The command is too memory heavy for hires grid. Need to split dataset up.
-
-                        cdo selyear,${ref_period_ini}/${ref_period_fin} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/${var}_day_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
+                        cdo selyear,${ref_period_ini}/${ref_period_fin} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/${var}_Aday_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
                         cdo distgrid,8 reference_climate_${index}.nc reference_climate_${index}_
                         mergefilelist=""
                         for tile in 0 1 2 3 4 5 6 7; do                      
@@ -317,23 +344,21 @@ for datatype in ${datatypes}; do
                   fi
 
 
-
-
                   ### 2. compute index (directly or from mask file)
                   case "$index" in
                     
                     Rx1day)
-                      cdo ${aggregation_period}max -mulc,${prscale} ${pr} ${indexfile}
+                      cdo ${cdo_aggregation}max -mulc,${prscale} ${pr} ${indexfile}
                       ;;
 
                     Rx5day)
-                      if [[ ${aggregation_period} == "mon" ]]; then
-                        freq="month"
+                      secondfile="R50mm5day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      if [[ ${freq} == "mon" ]]; then
+                        cdo eca_rx5day,50,freq=month -runsum,5 -mulc,${prscale} ${pr} results.nc
                       else
-                        freq=${aggregation_period}
+                        cdo eca_rx5day,50,freq=${freq} -runsum,5 -mulc,${prscale} ${pr} results.nc
                       fi
-                      secondfile="R50mm5day_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
-                      cdo eca_rx5day,50,freq=${freq} -runsum,5 -mulc,${prscale} ${pr} results.nc
+
                       cdo selcode,-1 results.nc ${indexfile}
                       cdo selcode,-2 results.nc ${secondfile}
 
@@ -355,11 +380,11 @@ for datatype in ${datatypes}; do
                       ;;
 
                     DD|R10mm|R20mm|HD|SU|TR|FD|ID)
-                      cdo ${aggregation_period}sum ${maskfile} ${indexfile}
+                      cdo ${cdo_aggregation}sum ${maskfile} ${indexfile}
                       ;;
 
                     CDD)
-                      secondfile="CDD5day_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="CDD5day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_cdd -mulc,${prscale} ${pr} ${indexfile}_etccdi
                       cdo selcode,-1 ${indexfile}_etccdi ${indexfile}
                       cdo selcode,-2 ${indexfile}_etccdi ${secondfile}
@@ -375,7 +400,7 @@ for datatype in ${datatypes}; do
                       ;;
 
                     CWD)
-                      secondfile="CWD5day_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="CWD5day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_cwd -mulc,${prscale} ${pr} ${indexfile}_etccdi
                       cdo selcode,-1 ${indexfile}_etccdi ${indexfile}
                       cdo selcode,-2 ${indexfile}_etccdi ${secondfile}
@@ -391,19 +416,19 @@ for datatype in ${datatypes}; do
                       ;;
 
                     TXx)
-                      cdo ${aggregation_period}max -subc,${K2C} ${tasmax} ${indexfile}
+                      cdo ${cdo_aggregation}max -subc,${K2C} ${tasmax} ${indexfile}
                       ;;
 
                     TNx)
-                      cdo ${aggregation_period}max -subc,${K2C} ${tasmin} ${indexfile}
+                      cdo ${cdo_aggregation}max -subc,${K2C} ${tasmin} ${indexfile}
                       ;;
 
                     TXn)
-                      cdo ${aggregation_period}min -subc,${K2C} ${tasmax} ${indexfile}
+                      cdo ${cdo_aggregation}min -subc,${K2C} ${tasmax} ${indexfile}
                       ;;
 
                     TNn)
-                      cdo ${aggregation_period}min -subc,${K2C} ${tasmin} ${indexfile}
+                      cdo ${cdo_aggregation}min -subc,${K2C} ${tasmin} ${indexfile}
                       ;;
 
                     TX10p)
@@ -453,11 +478,11 @@ for datatype in ${datatypes}; do
                       ;;
 
                     DTR)
-                      cdo ${aggregation_period}mean ${maskfile} ${indexfile}
+                      cdo ${cdo_aggregation}mean ${maskfile} ${indexfile}
                       ;;
 
                     WSDI)
-                      secondfile="WSDI6day_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="WSDI6day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_wsdi ${tasmax} ${maskfile} ${indexfile}_all
                       cdo selvar,wsdiETCCDI ${indexfile}_all ${indexfile}
                       cdo selvar,warm_spell_periods_per_time_period ${indexfile}_all ${secondfile}
@@ -473,7 +498,7 @@ for datatype in ${datatypes}; do
                       ;;
                     
                     CSDI)
-                      secondfile="CSDI6day_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="CSDI6day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_csdi ${tasmin} ${maskfile} ${indexfile}_all
                       cdo selvar,csdiETCCDI ${indexfile}_all ${indexfile}
                       cdo selvar,cold_spell_periods_per_time_period ${indexfile}_all ${secondfile}
@@ -523,7 +548,7 @@ for datatype in ${datatypes}; do
                         mv ${indexfile}_all_masked ${indexfile}_all
                       fi
                       
-                      secondfile="GSS_${aggregation_period}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="GSS_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
                       cdo selvar,thermal_growing_season_length ${indexfile}_all ${indexfile}
                       cdo selvar,day_of_year_of_growing_season_start ${indexfile}_all ${secondfile}
 
@@ -610,7 +635,7 @@ EOF
                   unit_file="${unit_file#"${unit_file%%[![:space:]]*}"}"   # remove leading whitespace
                   unit_file="${unit_file%"${unit_file##*[![:space:]]}"}"   # remove trailing whitespace
                   if [[ ! "${unit_file}" == "${unit}" ]]; then
-                    #echo "${model}, ${scen}, ${rea}, ${aggregation_period}: ${unit_file} (${unit} was expected)"
+                    #echo "${model}, ${scen}, ${rea}, ${freq}: ${unit_file} (${unit} was expected)"
                     cdo setunit,"${unit}" ${indexfile} ${indexfile}_unit
                     mv ${indexfile}_unit ${indexfile}
                   fi
@@ -618,14 +643,14 @@ EOF
                   ## set the long_name:
                   long_name_file=$(ncks -m -v ${index} ${indexfile} | sed -n "s/.*${index}:long_name = \"\(.*\)\".*/\1/p")
                   if [[ ! "${long_name_file}" == "${long_name}" ]]; then
-                    #echo "${model}, ${scen}, ${rea}, ${aggregation_period}: ${long_name_file} (${long_name} was expected)"
+                    #echo "${model}, ${scen}, ${rea}, ${freq}: ${long_name_file} (${long_name} was expected)"
                     ncatted -O -a long_name,${index},o,c,"${long_name}" ${indexfile}
                   fi
 
                 
                 
                 fi # file exists
-              done # aggregation_period
+              done # freq
               rm -f ${maskfile}
 
             done # index
