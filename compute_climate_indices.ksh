@@ -100,24 +100,25 @@ dict[CoDD]="°C|Cooling degree days"
 
 
 for datatype in ${datatypes}; do
+  datatype_without_version=`echo ${datatype}  | cut -c1-15`
 
   for model in ${models}; do
 
     if [[ ${model} == 'HadGEM3-GC31-MM' ]]; then 
       time_span_historical='18500101-20141230'
-      if [[ ${datatype} == "downscaling_MLv2" ]]; then
+      if [[ ${datatype_without_version} == "downscaling_MLv" ]]; then
         time_span_historical='19150101-20141230'
       fi
 
     elif [[ ${model} == 'MPI-ESM1-2-HR' ]]; then 
       time_span_historical='18500101-20141231'
-      if [[ ${datatype} == "downscaling_MLv2" ]]; then
+      if [[ ${datatype_without_version} == "downscaling_MLv" ]]; then
         time_span_historical='19150101-20141231'
       fi
     
     elif [[ ${model} == 'CESM1-CAM5' ]]; then
       time_span_historical='18500101-20051231'
-      if [[ ${datatype} == "downscaling_MLv2" ]]; then
+      if [[ ${datatype_without_version} == "downscaling_MLv" ]]; then
         time_span_historical='19060101-20051231'
       fi
     
@@ -129,9 +130,9 @@ for datatype in ${datatypes}; do
     ref_period_fin='2000'
     ref_scenario='historical'
     ref_time_span=${time_span_historical} # only used to identify the right file; the reference time period is defined by ref_period_ini/fin.
-    ref_realisation="r1i1p1f1"
+    ref_variant="r1i1p1f1"
     if [[ ${model} == 'HadGEM3-GC31-MM' ]]; then
-      ref_realisation="r1i1p1f3"
+      ref_variant="r1i1p1f3"
     fi
 
     for scen in ${scenarios}; do
@@ -139,7 +140,7 @@ for datatype in ${datatypes}; do
       if [[ ${datatype} == "ESM_output" ]]; then
         gridlist="gn"
         prscale=86400 # seconds per day
-      elif [[ ${datatype} == "downscaling_MLv2" ]]; then
+      elif [[ ${datatype_without_version} == "downscaling_MLv" ]]; then
         gridlist="${datatype}"
         prscale=1 # already in mm/day
       elif [[ ${datatype} == "ESM_biascorrected" ]]; then
@@ -161,51 +162,51 @@ for datatype in ${datatypes}; do
       if [[ -d /work/bm1404/ClimTip_data/${datatype}/${model}/${scen} ]]; then  # model and scenario exist
         cd /work/bm1404/ClimTip_data/${datatype}/${model}/${scen}
 
-        ## realisations to be computed, and time spans in file name; both depend on the model and scenario
+        ## variants to be computed, and time spans in file name; both depend on the model and scenario
         if [[ ${model} == 'HadGEM3-GC31-MM' && ${scen} == 'historical' ]]; then 
-            realisations="r1i1p1f3"
+            variants="r1i1p1f3"
             time_span=${time_span_historical}
         elif [[ ${model} == 'HadGEM3-GC31-MM' && ! ( ${scen} == 'historical' ) ]]; then
-            realisations='r1i1p1f1'
+            variants='r1i1p1f1'
             time_span='19070101-20061230'
 
         elif [[ ${model} == 'MPI-ESM1-2-HR' && ${scen} == 'historical' ]]; then 
-            realisations='r1i1p1f1' # r2i1p1f1 r3i1p1f1 r4i1p1f1 r5i1p1f1 r6i1p1f1 r7i1p1f1 r8i1p1f1 r9i1p1f1 r10i1p1f1'
+            variants='r1i1p1f1' # r2i1p1f1 r3i1p1f1 r4i1p1f1 r5i1p1f1 r6i1p1f1 r7i1p1f1 r8i1p1f1 r9i1p1f1 r10i1p1f1'
             time_span=${time_span_historical}
         elif [[ ${model} == 'MPI-ESM1-2-HR'  && ! ( ${scen} == 'historical' ) ]]; then
-          realisations='r1i1p1f1'
+          variants='r1i1p1f1'
           time_span='19350101-20341231'
           if [[ ${datatype} == "downscaling_WRF" ]]; then
             time_span='20020101-20211231'
           fi
         elif [[ ${model} == 'CESM1-CAM5'  && ${scen} == 'historical' ]]; then
-          realisations='r1i1p1f1'
+          variants='r1i1p1f1'
           time_span=${time_span_historical}
         elif [[ ${model} == 'CESM1-CAM5'  && ! ( ${scen} == 'historical' ) ]]; then
-          realisations='r1i1p1f1'
+          variants='r1i1p1f1'
           time_span='05650101-06641231'
           if [[ ${datatype} == "downscaling_WRF" ]]; then
             time_span='06320101-06511231' # to be repaired with leading 0
           fi
 
         else
-          echo "time span and realisations not defined - abort"
+          echo "time span and variants not defined - abort"
           exit
         fi
 
-        for rea in ${realisations}; do
+        for variant in ${variants}; do
           for grid in ${gridlist}; do
 
-            pr="pr_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
-            tas="tas_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
-            tasmin="tasmin_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
-            tasmax="tasmax_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+            pr="pr_Aday_${model}_${scen}_${variant}_${grid}_${time_span}.nc"
+            tas="tas_Aday_${model}_${scen}_${variant}_${grid}_${time_span}.nc"
+            tasmin="tasmin_Aday_${model}_${scen}_${variant}_${grid}_${time_span}.nc"
+            tasmax="tasmax_Aday_${model}_${scen}_${variant}_${grid}_${time_span}.nc"
 
             for index in ${indices}; do
               echo ""
-              echo "${datatype}, ${model}, ${scen}, ${rea}, ${grid}, ${index}"
+              echo "${datatype}, ${model}, ${scen}, ${variant}, ${grid}, ${index}"
 
-              #var_orig_file="${var_orig}_Aday_${model}_${scen}_${rea}_${grid}_${time_span}.nc"
+              #var_orig_file="${var_orig}_Aday_${model}_${scen}_${variant}_${grid}_${time_span}.nc"
 
               ### some indices have been computed for several aggregation periods:
               frequencies="yr"
@@ -245,11 +246,11 @@ for datatype in ${datatypes}; do
 
                 fi
 
-                indexfile="${index}_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                indexfile="${index}_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                 if [[ ! -f ${indexfile} ]]; then
 
                   ### 1. compute mask for indices that need it, and keep it until loop over aggregation time is closed.
-                  maskfile="${index}_mask_${model}_${scen}_${rea}_${grid}.nc"
+                  maskfile="${index}_mask_${model}_${scen}_${variant}_${grid}.nc"
                   if [[ ! -f ${maskfile} ]]; then
                     percentiles=0
                     case "$index" in
@@ -262,13 +263,13 @@ for datatype in ${datatypes}; do
                       R95pTOT)
                         ## note: cdo documentation of eca_r95ptot is so confusing (and seems to differ from common definitions) that we don't use it here!
                         ## https://code.mpimet.mpg.de/boards/1/topics/6182
-                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_Aday_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
+                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_Aday_${model}_${ref_scenario}_${ref_variant}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
                         cdo timpctl,95 reference_climate_${index}.nc -timmin reference_climate_${index}.nc -timmax reference_climate_${index}.nc ${maskfile}
                         rm reference_climate_${index}.nc
                         percentiles=1
                         ;;
                       R99pTOT)
-                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_Aday_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
+                        cdo selyear,${ref_period_ini}/${ref_period_fin} -setrtomiss,-999,1 -mulc,${prscale} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/pr_Aday_${model}_${ref_scenario}_${ref_variant}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
                         cdo timpctl,99 reference_climate_${index}.nc -timmin reference_climate_${index}.nc -timmax reference_climate_${index}.nc ${maskfile}
                         rm reference_climate_${index}.nc
                         percentiles=1
@@ -317,7 +318,7 @@ for datatype in ${datatypes}; do
                         esac
 
                         ### problem: The command is too memory heavy for hires grid. Need to split dataset up.
-                        cdo selyear,${ref_period_ini}/${ref_period_fin} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/${var}_Aday_${model}_${ref_scenario}_${ref_realisation}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
+                        cdo selyear,${ref_period_ini}/${ref_period_fin} /work/bm1404/ClimTip_data/${datatype}/${model}/${ref_scenario}/${var}_Aday_${model}_${ref_scenario}_${ref_variant}_${grid}_${ref_time_span}.nc reference_climate_${index}.nc
                         cdo distgrid,8 reference_climate_${index}.nc reference_climate_${index}_
                         mergefilelist=""
                         for tile in 0 1 2 3 4 5 6 7; do                      
@@ -352,7 +353,7 @@ for datatype in ${datatypes}; do
                       ;;
 
                     Rx5day)
-                      secondfile="R50mm5day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="R50mm5day_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                       if [[ ${freq} == "mon" ]]; then
                         cdo eca_rx5day,50,freq=month -runsum,5 -mulc,${prscale} ${pr} results.nc
                       else
@@ -384,7 +385,7 @@ for datatype in ${datatypes}; do
                       ;;
 
                     CDD)
-                      secondfile="CDD5day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="CDD5day_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_cdd -mulc,${prscale} ${pr} ${indexfile}_etccdi
                       cdo selcode,-1 ${indexfile}_etccdi ${indexfile}
                       cdo selcode,-2 ${indexfile}_etccdi ${secondfile}
@@ -400,7 +401,7 @@ for datatype in ${datatypes}; do
                       ;;
 
                     CWD)
-                      secondfile="CWD5day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="CWD5day_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_cwd -mulc,${prscale} ${pr} ${indexfile}_etccdi
                       cdo selcode,-1 ${indexfile}_etccdi ${indexfile}
                       cdo selcode,-2 ${indexfile}_etccdi ${secondfile}
@@ -482,7 +483,7 @@ for datatype in ${datatypes}; do
                       ;;
 
                     WSDI)
-                      secondfile="WSDI6day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="WSDI6day_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_wsdi ${tasmax} ${maskfile} ${indexfile}_all
                       cdo selvar,wsdiETCCDI ${indexfile}_all ${indexfile}
                       cdo selvar,warm_spell_periods_per_time_period ${indexfile}_all ${secondfile}
@@ -498,7 +499,7 @@ for datatype in ${datatypes}; do
                       ;;
                     
                     CSDI)
-                      secondfile="CSDI6day_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="CSDI6day_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                       cdo etccdi_csdi ${tasmin} ${maskfile} ${indexfile}_all
                       cdo selvar,csdiETCCDI ${indexfile}_all ${indexfile}
                       cdo selvar,cold_spell_periods_per_time_period ${indexfile}_all ${secondfile}
@@ -521,7 +522,7 @@ for datatype in ${datatypes}; do
                         fi
                       elif [[ ${datatype} == "ESM_biascorrected" ]]; then
                         lsm=/work/bm1404/ClimTip_data/scripts/lsm_${model}_gn.nc
-                      elif [[ ${datatype} == "downscaling_MLv2" ]]; then
+                      elif [[ ${datatype_without_version} == "downscaling_MLv" ]]; then
                         lsm=/work/bm1404/ClimTip_data/scripts/land_sea_mask_ECMWF-ERA5_observation.nc
                       fi
 
@@ -542,13 +543,13 @@ for datatype in ${datatypes}; do
                       cdo setmissval,nan ${indexfile}_all_masked ${indexfile}_all
 
                       ### sometimes, the dimensions have changed, perhaps because of different dimension names in the different files (and the lsm file). Repair this here:
-                      if [[ ${datatype} == "downscaling_MLv2" ]]; then   # not sure we need the if clause actually
+                      if [[ ${datatype_without_version} == "downscaling_MLv" ]]; then   # not sure we need the if clause actually
                         ncrename -d .x,longitude -d .y,latitude ${indexfile}_all_masked 2>/dev/null || true
                         ncrename -v .lon,longitude -v .lat,latitude ${indexfile}_all_masked 2>/dev/null || true                 
                         mv ${indexfile}_all_masked ${indexfile}_all
                       fi
                       
-                      secondfile="GSS_E${freq}_${model}_${scen}_${rea}_${grid}_${time_span_indexfile}.nc"
+                      secondfile="GSS_E${freq}_${model}_${scen}_${variant}_${grid}_${time_span_indexfile}.nc"
                       cdo selvar,thermal_growing_season_length ${indexfile}_all ${indexfile}
                       cdo selvar,day_of_year_of_growing_season_start ${indexfile}_all ${secondfile}
 
@@ -635,7 +636,7 @@ EOF
                   unit_file="${unit_file#"${unit_file%%[![:space:]]*}"}"   # remove leading whitespace
                   unit_file="${unit_file%"${unit_file##*[![:space:]]}"}"   # remove trailing whitespace
                   if [[ ! "${unit_file}" == "${unit}" ]]; then
-                    #echo "${model}, ${scen}, ${rea}, ${freq}: ${unit_file} (${unit} was expected)"
+                    #echo "${model}, ${scen}, ${variant}, ${freq}: ${unit_file} (${unit} was expected)"
                     cdo setunit,"${unit}" ${indexfile} ${indexfile}_unit
                     mv ${indexfile}_unit ${indexfile}
                   fi
@@ -643,11 +644,9 @@ EOF
                   ## set the long_name:
                   long_name_file=$(ncks -m -v ${index} ${indexfile} | sed -n "s/.*${index}:long_name = \"\(.*\)\".*/\1/p")
                   if [[ ! "${long_name_file}" == "${long_name}" ]]; then
-                    #echo "${model}, ${scen}, ${rea}, ${freq}: ${long_name_file} (${long_name} was expected)"
+                    #echo "${model}, ${scen}, ${variant}, ${freq}: ${long_name_file} (${long_name} was expected)"
                     ncatted -O -a long_name,${index},o,c,"${long_name}" ${indexfile}
                   fi
-
-                
                 
                 fi # file exists
               done # freq
@@ -655,7 +654,7 @@ EOF
 
             done # index
           done # grid (domain in case of WRF)
-        done # rea
+        done # variant
       fi # model and scenario exist
     done # scenario
   done # model
