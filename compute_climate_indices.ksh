@@ -10,7 +10,7 @@
 ## All indices get the letter E (extended) as the prefix in the table_id. It signals to users that these are non-standard extension variables.
 ## Regarding the frequency given in the file name:
 ## When the index has a time series (e.g. TXx computed annually, giving one value per year), the frequency reflects the output frequency of the index itself.
-## When the index is a single value over the whole period (e.g. TN10p or tasstd computed as a climatology), the frequency reflects the input data frequency used to compute it — because there is no meaningful output frequency.
+## When the index is a single value over the whole period (e.g. TN10p or TASSTD computed as a climatology), the frequency reflects the input data frequency used to compute it — because there is no meaningful output frequency.
 ## We do not use the table_id "fx" because that would require removing the time period information from the file name.
 
 ## For indices with a single value over the whole period:
@@ -33,7 +33,7 @@
 
 
 ######### edit here:
-indices='Rx1day Rx5day R95pTOT R99pTOT DD R10mm R20mm CDD CWD TXx TNx TXn TNn HD SU TR FD ID TX10p TN10p TX90p TN90p DTR WSDI CSDI GSL tasstd prstd HDD CoDD'
+indices='Rx1day Rx5day R95pTOT R99pTOT DD R10mm R20mm CDD CWD TXx TNx TXn TNn HD SU TR FD ID TX10p TN10p TX90p TN90p DTR WSDI CSDI GSL TASSTD PRSTD HDD CoDD'
 
 datatypes="ESM_output"
 
@@ -91,8 +91,8 @@ dict[DTR]="°C|Diurnal temperature range"
 dict[WSDI]="days|Warm spell duration index"
 dict[CSDI]="days|Cold spell duration index"
 dict[GSL]="days|Growing season length"
-dict[tasstd]="°C|Stdev of annual temperature"
-dict[prstd]="mm|Stdev of annual precipitation"
+dict[TASSTD]="°C|Stdev of annual temperature"
+dict[PRSTD]="mm|Stdev of annual precipitation"
 dict[HDD]="°C|Heating degree days"
 dict[CoDD]="°C|Cooling degree days"
 
@@ -215,8 +215,8 @@ for datatype in ${datatypes}; do
                 Rx1day|Rx5day|TXx|TNx|TXn|TNn)
                   frequencies="yr mon"
                   ;;
-                TX10p|TN10p|TX90p|TN90p|tasstd|prstd) ## these indices are no time series, but single values computed from the entire time period
-                  if [[ ${index} == "tasstd" ||  ${index} == "prstd" ]]; then
+                TX10p|TN10p|TX90p|TN90p|TASSTD|PRSTD) ## these indices are no time series, but single values computed from the entire time period
+                  if [[ ${index} == "TASSTD" ||  ${index} == "PRSTD" ]]; then
                     frequencies="yr"   # since they are derived from yearly averages
                   else
                     frequencies="day"  # since they are derived from the daily output
@@ -241,7 +241,7 @@ for datatype in ${datatypes}; do
                 elif [[ ${freq} == "mon" ]]; then
                   cdo_aggregation="mon"
                 #else
-                # indices like tasstd prstd TX10p etc do not use ${cdo_aggregation}, so omit"
+                # indices like TASSTD PRSTD TX10p etc do not use ${cdo_aggregation}, so omit"
                 # T??0p indices have frequency day (see above), but that's not used in a command since it is the original data's frequency.
 
                 fi
@@ -565,7 +565,7 @@ for datatype in ${datatypes}; do
                       rm ${indexfile}_all ${indexfile}_all_masked 
                       ;; 
 
-                    tasstd)
+                    TASSTD)
                       if [[ ${scen} == "historical" ]]; then
                         cdo selyear,1979/2000 ${tas} ${index}_tas_1979-2000.nc
                         cdo timstd -yearmean ${index}_tas_1979-2000.nc ${indexfile}
@@ -575,7 +575,7 @@ for datatype in ${datatypes}; do
                       fi
                       ;;
                       
-                    prstd)
+                    PRSTD)
                       if [[ ${scen} == "historical" ]]; then
                         cdo selyear,1979/2000 ${pr} ${index}_pr_1979-2000.nc
                         cdo mulc,${prscale} -timstd -yearsum ${index}_pr_1979-2000.nc ${indexfile}
