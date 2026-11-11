@@ -20,7 +20,7 @@ The code was written for the ClimTip project by Sebastian Bathiany, Technical Un
 
 Licence: MIT
 
-DOI of version 2.0: https://zenodo.org/records/23979445
+DOI: https://doi.org/10.5281/zenodo.22913256
 
 List of indices:
 
